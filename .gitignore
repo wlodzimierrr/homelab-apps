@@ -38,3 +38,8 @@ missing
 wg0.conf
 docs/day-0-rebuild-runbook.md
 workloads-repo/
+
+# -------------------------
+# App Source Split (tracked in separate repo)
+# -------------------------
+apps/portal/
