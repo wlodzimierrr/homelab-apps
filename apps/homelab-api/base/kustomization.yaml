@@ -7,6 +7,12 @@ resources:
   - rolebinding-backend-kube-api-read.yaml
   - deployment.yaml
   - service.yaml
+  - postgres-secret.yaml
+  - postgres-service.yaml
+  - postgres-statefulset.yaml
+  - migration-job.yaml
   - networkpolicy-default-deny.yaml
   - networkpolicy-allow-dns-egress.yaml
   - networkpolicy-allow-ingress.yaml
+  - networkpolicy-allow-postgres-ingress.yaml
+  - networkpolicy-allow-egress-postgres.yaml

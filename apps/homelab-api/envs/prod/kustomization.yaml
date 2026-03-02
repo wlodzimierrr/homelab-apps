@@ -6,3 +6,4 @@ commonLabels:
   homelab.env: prod
 patches:
   - path: patch-deployment.yaml
+  - path: patch-migration-job.yaml

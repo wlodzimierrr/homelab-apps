@@ -1,0 +1,11 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: homelab-api-migrate
+  namespace: homelab-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: migrate
+          image: ghcr.io/wlodzimierrr/homelab-api:0.2.0

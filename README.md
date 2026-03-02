@@ -74,3 +74,12 @@ Use these exact paths in Argo CD `spec.source.path`.
 - explicit app traffic allows:
   - Traefik (`kube-system`) ingress to app pods.
   - `homelab-web` egress to `homelab-api`.
+
+## Homelab API data layer
+
+`apps/homelab-api/base` now includes:
+
+- `postgres-statefulset.yaml` with a PVC (`volumeClaimTemplates`) for durable Postgres storage.
+- `postgres-service.yaml` + `postgres-secret.yaml` for in-cluster DB connectivity and credentials.
+- `migration-job.yaml` (Argo CD Sync hook) that runs `alembic upgrade head`.
+- DB-specific network policies allowing only labeled DB clients to reach Postgres on `5432`.

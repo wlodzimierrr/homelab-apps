@@ -1,36 +1,34 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: homelab-api
+  name: homelab-api-migrate
   namespace: homelab-api
   labels:
     app.kubernetes.io/name: homelab-api
+    app.kubernetes.io/component: migration
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: homelab-api
+  backoffLimit: 3
   template:
     metadata:
       labels:
         app.kubernetes.io/name: homelab-api
-        app.kubernetes.io/component: api
+        app.kubernetes.io/component: migration
         homelab.io/db-client: "true"
     spec:
       serviceAccountName: homelab-api-backend
-      automountServiceAccountToken: true
+      restartPolicy: OnFailure
       containers:
-        - name: api
+        - name: migrate
           image: ghcr.io/example/homelab-api:0.1.0
           imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 8000
+          command:
+            - /bin/sh
+            - -c
+            - alembic upgrade head
           env:
-            - name: APP_ENV
-              value: base
-            - name: LOG_LEVEL
-              value: info
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
@@ -48,10 +46,3 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: DATABASE_URL
               value: postgresql+psycopg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@homelab-api-postgres:5432/$(POSTGRES_DB)
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 256Mi
