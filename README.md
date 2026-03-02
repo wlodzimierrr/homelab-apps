@@ -133,6 +133,46 @@ Current host routing:
 
 Frontend proxies `/api/*` to `homelab-api.homelab-api.svc.cluster.local`.
 
+## Portal ingress auth gate (T1.3.2)
+
+`apps/homelab-web/base/ingress.yaml` is protected by Traefik basic auth middleware:
+
+- Middleware: `homelab-web-basic-auth`
+- Secret reference: `homelab-web-basic-auth`
+- Annotation: `traefik.ingress.kubernetes.io/router.middlewares`
+
+### Basic auth bootstrap (secret not stored in Git)
+
+Create the middleware credential secret in `homelab-web` namespace:
+
+```bash
+cp apps/homelab-web/base/basic-auth-secret.env.example /tmp/homelab-web-basic-auth.env
+# Replace the placeholder hash with a real htpasswd line, for example:
+# htpasswd -nbB admin 'change-me-now'
+kubectl -n homelab-web create secret generic homelab-web-basic-auth \
+  --from-env-file=/tmp/homelab-web-basic-auth.env \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+### Emergency break-glass path
+
+Temporarily disable ingress auth by removing middleware annotation from the ingress (unauthenticated access will then be allowed):
+
+```bash
+kubectl -n homelab-web annotate ingress homelab-web \
+  traefik.ingress.kubernetes.io/router.middlewares-
+```
+
+Restore the auth gate:
+
+```bash
+kubectl -n homelab-web annotate ingress homelab-web \
+  traefik.ingress.kubernetes.io/router.middlewares=homelab-web-homelab-web-basic-auth@kubernetescrd \
+  --overwrite
+```
+
+Because this repo is GitOps-managed, also commit matching manifest changes (or revert the break-glass commit) so Argo CD state remains consistent.
+
 ### Private GHCR image pulls for web namespace
 
 `homelab-web` uses ServiceAccount `homelab-web` with pull secret `ghcr-pull-secret`.
@@ -144,4 +184,3 @@ kubectl -n homelab-web create secret docker-registry ghcr-pull-secret \
   --docker-username=wlodzimierrr \
   --docker-password="$CR_PAT"
 ```
-

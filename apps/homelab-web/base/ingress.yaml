@@ -5,6 +5,8 @@ metadata:
   namespace: homelab-web
   labels:
     app.kubernetes.io/name: homelab-web
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: homelab-web-homelab-web-basic-auth@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
