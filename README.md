@@ -141,6 +141,8 @@ Frontend proxies `/api/*` to `homelab-api.homelab-api.svc.cluster.local`.
 - Secret reference: `homelab-web-basic-auth`
 - Annotation: `traefik.ingress.kubernetes.io/router.middlewares`
 
+`apps/homelab-web/base/ingress-api.yaml` handles `/api` on the same host without basic-auth middleware so application bearer JWT headers are not blocked by ingress basic-auth challenges.
+
 ### Basic auth bootstrap (secret not stored in Git)
 
 Create the middleware credential secret in `homelab-web` namespace:

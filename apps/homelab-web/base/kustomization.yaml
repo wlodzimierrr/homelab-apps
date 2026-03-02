@@ -6,6 +6,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - ingress-api.yaml
   - middleware-basic-auth.yaml
   - networkpolicy-default-deny.yaml
   - networkpolicy-allow-dns-egress.yaml
