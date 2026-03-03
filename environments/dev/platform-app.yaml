@@ -6,7 +6,7 @@ metadata:
 spec:
   project: homelab
   source:
-    repoURL: https://github.com/wlodzimierrr/homelab-apps.git
+    repoURL: https://github.com/wlodzimierrr/homelab-workloads.git
     targetRevision: main
     path: platform/envs/dev
   destination:
