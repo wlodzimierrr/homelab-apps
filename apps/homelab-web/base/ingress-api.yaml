@@ -5,13 +5,15 @@ metadata:
   namespace: homelab-web
   labels:
     app.kubernetes.io/name: homelab-web
+  annotations:
+    traefik.ingress.kubernetes.io/router.priority: "100"
 spec:
   ingressClassName: traefik
   rules:
     - host: portal.dev.homelab.local
       http:
         paths:
-          - path: /api
+          - path: /api/
             pathType: Prefix
             backend:
               service:

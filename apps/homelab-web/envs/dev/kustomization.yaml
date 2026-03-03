@@ -4,3 +4,7 @@ resources:
   - ../../base
 commonLabels:
   homelab.env: dev
+patches:
+  - path: patch-deployment.yaml
+  - path: patch-ingress.yaml
+  - path: patch-ingress-api.yaml
