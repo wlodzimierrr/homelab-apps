@@ -419,6 +419,7 @@ Recommended immediate relabeling:
 
 #### T1.6.1 Services list page
 - **Description:** Implement `/services` showing service name, environments, current status (health/sync), public URL (if present), and basic search/filter. Data should be read-only and may be adapted from `GET /api/projects` or a future `/services` endpoint.
+- **Status:** DONE (2026-03-03)
 - **Acceptance Criteria:**
   - `/services` shows a list/table of services with columns: name, env(s), status badge, public URL, last deploy timestamp (if available).
   - Client-side search and environment filter present and functional.
@@ -426,6 +427,13 @@ Recommended immediate relabeling:
 - **Dependencies:** T1.4.1, T1.4.4
 - **Complexity:** M
 - **Risk:** Medium
+- **Evidence:**
+  - `/services` is now data-driven from `GET /projects` via adapter logic, grouped by service name with environment aggregation (`apps/portal/frontend/src/pages/services-page.tsx`).
+  - Services table renders required columns: service name, environment(s), health/sync status badges, public URL (or `N/A`), and last deploy timestamp (or `N/A`).
+  - Client-side search and environment filtering implemented and combined in-memory before render (`services-page.tsx`).
+  - Loading skeleton, API error + retry, empty state, and no-filter-match state added on the page.
+  - API `Project` typing extended with optional `health`, `sync`, `publicUrl`, and `lastDeployAt` fields for forward compatibility (`apps/portal/frontend/src/lib/api.ts`).
+  - Mobile topbar menu behavior on small screens updated from direct dashboard link to an actual navigation menu, fixing services flow navigation (`apps/portal/frontend/src/components/navigation/topbar.tsx`).
 
 #### T1.6.2 Service detail page (overview)
 - **Description:** Implement `/services/:serviceId` with Overview tab showing status cards: deployed version, sync/health state, links to Argo app, Grafana dashboard, and Logs. Endpoints list and a preview of recent deployments (top 5).
