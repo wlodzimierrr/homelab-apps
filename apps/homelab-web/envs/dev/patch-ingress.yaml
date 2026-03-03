@@ -3,6 +3,17 @@ kind: Ingress
 metadata:
   name: homelab-web
   namespace: homelab-web
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   rules:
     - host: portal.dev.homelab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homelab-web
+                port:
+                  number: 80
