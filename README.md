@@ -46,6 +46,17 @@ All projects allow only this repo URL as a source:
 
 - `https://github.com/wlodzimierrr/homelab-workloads.git`
 
+## RBAC audit guardrails
+
+- RBAC audit report: `audit/rbac-audit-2026-03-04.md`
+- Guardrail check script: `scripts/check-rbac-guardrails.sh`
+
+Run locally:
+
+```bash
+./scripts/check-rbac-guardrails.sh
+```
+
 ## Notes
 
 - `repoURL` in bootstrap and environment Applications is pinned to this repo URL; update all manifests consistently if you fork or rename it.
