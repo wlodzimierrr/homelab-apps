@@ -51,12 +51,14 @@ All projects allow only this repo URL as a source:
 - RBAC audit report: `audit/rbac-audit-2026-03-04.md`
 - Guardrail check script: `scripts/check-rbac-guardrails.sh`
 - Secret guardrail check script: `scripts/check-secrets-guardrails.sh`
+- Rotation SLO check script: `scripts/verify-rotation-slo.sh`
 
 Run locally:
 
 ```bash
 ./scripts/check-rbac-guardrails.sh
 ./scripts/check-secrets-guardrails.sh
+./scripts/verify-rotation-slo.sh homelab-api homelab-api 300
 ```
 
 ## Notes
@@ -185,6 +187,15 @@ This config protects both UI and `/api/*` with:
 Use `docs/runbooks/sso-break-glass.md` for emergency bypass and restoration commands.
 
 Because this repo is GitOps-managed, commit/revert any break-glass change so Argo CD state remains consistent.
+
+## Quarterly secret rotation
+
+Use `docs/runbooks/secret-rotation-quarterly.md` for the quarterly procedure covering:
+
+1. SOPS-encrypted DB credential rotation
+2. oauth2-proxy credential/cookie rotation
+3. GHCR pull secret rotation
+4. Rollout SLO verification (`<= 300s`) via `scripts/verify-rotation-slo.sh`
 
 ### Private GHCR image pulls for web namespace
 
