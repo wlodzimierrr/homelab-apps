@@ -31,6 +31,7 @@ spec:
             - --cookie-secure=false
             - --cookie-samesite=lax
             - --email-domain=*
+            - --scope=read:user user:email
           envFrom:
             - secretRef:
                 name: oauth2-proxy-secret
