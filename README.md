@@ -33,9 +33,22 @@ Use these exact paths in Argo CD `spec.source.path`.
    - `bootstrap/root-app-dev.yaml`, or
    - `bootstrap/root-app-prod.yaml`.
 
+## Argo CD project boundaries
+
+`bootstrap/project-homelab.yaml` defines four scoped `AppProject` objects:
+
+- `homelab-bootstrap`: may deploy only to `argocd` namespace.
+- `homelab-platform`: may deploy only to `platform` namespace.
+- `homelab-api`: may deploy only to `homelab-api` namespace.
+- `homelab-web`: may deploy only to `homelab-web` namespace.
+
+All projects allow only this repo URL as a source:
+
+- `https://github.com/wlodzimierrr/homelab-workloads.git`
+
 ## Notes
 
-- `repoURL` is intentionally a placeholder in example Applications. Replace it with your dedicated repo URL.
+- `repoURL` in bootstrap and environment Applications is pinned to this repo URL; update all manifests consistently if you fork or rename it.
 - Environment folders use Kustomize overlays for clear, explicit promotion boundaries.
 
 ## Layering Strategy
@@ -186,3 +199,67 @@ kubectl -n homelab-web create secret docker-registry ghcr-pull-secret \
   --docker-username=wlodzimierrr \
   --docker-password="$CR_PAT"
 ```
+
+## GHCR auth and retention policy (T2.3.1)
+
+### Standard auth pattern for cluster pulls
+
+- Registry: `ghcr.io`
+- Secret name: `ghcr-pull-secret`
+- Namespaces requiring the secret: `homelab-api`, `homelab-web`
+- ServiceAccounts consuming it:
+  - `apps/homelab-api/base/serviceaccount-backend.yaml`
+  - `apps/homelab-web/base/serviceaccount-web.yaml`
+
+Recommended token scope for pull-only credentials:
+
+- Classic PAT: `read:packages` only
+- Or fine-grained PAT with package read access limited to:
+  - `ghcr.io/wlodzimierrr/homelab-api`
+  - `ghcr.io/wlodzimierrr/homelab-web`
+
+### Pull secret rotation procedure
+
+Create a new read-only token in GitHub, then rotate secrets in both namespaces:
+
+```bash
+export GHCR_USER="wlodzimierrr"
+export GHCR_TOKEN="<new-read-only-token>"
+
+for ns in homelab-api homelab-web; do
+  kubectl -n "$ns" create secret docker-registry ghcr-pull-secret \
+    --docker-server=ghcr.io \
+    --docker-username="$GHCR_USER" \
+    --docker-password="$GHCR_TOKEN" \
+    --dry-run=client -o yaml | kubectl apply -f -
+done
+```
+
+Validation:
+
+```bash
+kubectl -n homelab-api get secret ghcr-pull-secret
+kubectl -n homelab-web get secret ghcr-pull-secret
+kubectl -n homelab-api rollout restart deployment/homelab-api
+kubectl -n homelab-web rollout restart deployment/homelab-web
+kubectl -n homelab-api rollout status deployment/homelab-api
+kubectl -n homelab-web rollout status deployment/homelab-web
+```
+
+Rotation cadence: every 90 days, and immediately after any credential exposure suspicion.
+
+### Registry retention policy
+
+Packages covered:
+
+- `ghcr.io/wlodzimierrr/homelab-api`
+- `ghcr.io/wlodzimierrr/homelab-web`
+
+Retention rules:
+
+- Keep all semver/release tags (for example `0.3.1`, `0.2.0`) for rollback safety.
+- Keep digest/provenance artifacts associated with retained tags.
+- Keep only the most recent 60 `sha-<commit>` tags per image package.
+- Prune `sha-*` tags older than 60 entries on a monthly schedule.
+
+Operational note: apply retention via GHCR package settings or an org/repo cleanup workflow; never delete the currently deployed prod tag or the prior known-good rollback tag.

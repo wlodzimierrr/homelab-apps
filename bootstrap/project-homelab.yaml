@@ -1,15 +1,61 @@
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: homelab
+  name: homelab-bootstrap
   namespace: argocd
 spec:
-  description: Homelab platform and applications
+  description: Homelab bootstrap applications in argocd namespace only
   sourceRepos:
-    - '*'
+    - https://github.com/wlodzimierrr/homelab-workloads.git
   destinations:
-    - namespace: '*'
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist: []
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: homelab-platform
+  namespace: argocd
+spec:
+  description: Homelab platform resources in platform namespace only
+  sourceRepos:
+    - https://github.com/wlodzimierrr/homelab-workloads.git
+  destinations:
+    - namespace: platform
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
-    - group: '*'
-      kind: '*'
+    - group: ""
+      kind: Namespace
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: homelab-api
+  namespace: argocd
+spec:
+  description: Homelab API resources in homelab-api namespace only
+  sourceRepos:
+    - https://github.com/wlodzimierrr/homelab-workloads.git
+  destinations:
+    - namespace: homelab-api
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: homelab-web
+  namespace: argocd
+spec:
+  description: Homelab web resources in homelab-web namespace only
+  sourceRepos:
+    - https://github.com/wlodzimierrr/homelab-workloads.git
+  destinations:
+    - namespace: homelab-web
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace

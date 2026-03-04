@@ -4,7 +4,7 @@ metadata:
   name: workloads-prod
   namespace: argocd
 spec:
-  project: homelab
+  project: homelab-bootstrap
   source:
     repoURL: https://github.com/wlodzimierrr/homelab-workloads.git
     targetRevision: main
