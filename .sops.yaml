@@ -1,0 +1,5 @@
+creation_rules:
+  - path_regex: apps/.*/envs/.*/.*secret.*\.enc\.ya?ml$
+    encrypted_regex: "^(data|stringData)$"
+    age:
+      - age1ufd3ltyyp6pwjsxp3teszwyf24scyu9jwszhyl3gzu2eh52wjyys7v8una

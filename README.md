@@ -50,11 +50,13 @@ All projects allow only this repo URL as a source:
 
 - RBAC audit report: `audit/rbac-audit-2026-03-04.md`
 - Guardrail check script: `scripts/check-rbac-guardrails.sh`
+- Secret guardrail check script: `scripts/check-secrets-guardrails.sh`
 
 Run locally:
 
 ```bash
 ./scripts/check-rbac-guardrails.sh
+./scripts/check-secrets-guardrails.sh
 ```
 
 ## Notes
@@ -108,29 +110,25 @@ Run locally:
 - `migration-job.yaml` (Argo CD Sync hook) that waits for DB readiness and runs `alembic upgrade head` with retry.
 - DB-specific network policies allowing only labeled DB clients to reach Postgres on `5432`.
 
-### Postgres credentials bootstrap (no plaintext secrets in Git)
+### Postgres credentials (SOPS standard)
 
 `homelab-api` expects a Secret named `homelab-api-postgres` in namespace `homelab-api`.
-This repo intentionally does not store the Secret manifest with credentials.
 
-Bootstrap/create secret:
+Repository standard:
+
+1. Store secret manifests only as SOPS-encrypted files (`*.enc.yaml`).
+2. Never commit plaintext `kind: Secret` manifests.
+3. Validate with `./scripts/check-secrets-guardrails.sh`.
+
+Implementation runbook:
+
+- `docs/runbooks/sops-secrets.md`
+
+Bootstrap helper:
 
 ```bash
-cp apps/homelab-api/base/postgres-secret.env.example /tmp/homelab-api-postgres.env
-# Edit /tmp/homelab-api-postgres.env and set a strong POSTGRES_PASSWORD.
-kubectl -n homelab-api create secret generic homelab-api-postgres \
-  --from-env-file=/tmp/homelab-api-postgres.env \
-  --dry-run=client -o yaml | kubectl apply -f -
-```
-
-Rotate password:
-
-```bash
-kubectl -n homelab-api create secret generic homelab-api-postgres \
-  --from-env-file=/tmp/homelab-api-postgres.env \
-  --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n homelab-api rollout restart deployment/homelab-api
-kubectl -n argocd annotate app homelab-api-dev argocd.argoproj.io/refresh=hard --overwrite
+./scripts/bootstrap-sops-postgres-secret.sh dev
+./scripts/bootstrap-sops-postgres-secret.sh prod
 ```
 
 ### Private GHCR image pulls
