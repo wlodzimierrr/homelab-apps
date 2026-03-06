@@ -20,6 +20,7 @@ resources:
   - networkpolicy-allow-egress-gitops-https.yaml
   - networkpolicy-allow-egress-prometheus.yaml
   - networkpolicy-allow-egress-loki.yaml
+  - networkpolicy-allow-egress-alertmanager.yaml
   - networkpolicy-allow-ingress.yaml
   - networkpolicy-allow-postgres-ingress.yaml
   - networkpolicy-allow-egress-postgres.yaml
