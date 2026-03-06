@@ -29,7 +29,7 @@ spec:
           enabled: false
 
         alertmanager:
-          enabled: false
+          enabled: true
 
         grafana:
           adminPassword: changeme-dev

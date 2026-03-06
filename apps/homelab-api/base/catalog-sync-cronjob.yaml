@@ -21,6 +21,8 @@ spec:
             app.kubernetes.io/name: homelab-api
             app.kubernetes.io/component: catalog-sync
             homelab.io/db-client: "true"
+            homelab.io/gitops-reader: "true"
+            homelab.io/kube-api-reader: "true"
         spec:
           serviceAccountName: homelab-api-backend
           restartPolicy: Never
@@ -59,3 +61,7 @@ spec:
                       key: POSTGRES_PASSWORD
                 - name: DATABASE_URL
                   value: postgresql+psycopg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@homelab-api-postgres:5432/$(POSTGRES_DB)
+                - name: GITOPS_WORKLOADS_REPO_URL
+                  value: https://github.com/wlodzimierrr/homelab-workloads.git
+                - name: GITOPS_WORKLOADS_REF
+                  value: main

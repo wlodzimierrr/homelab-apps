@@ -3,6 +3,8 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - serviceaccount-backend.yaml
+  - clusterrole-backend-kube-api-read.yaml
+  - clusterrolebinding-backend-kube-api-read.yaml
   - role-backend-kube-api-read.yaml
   - rolebinding-backend-kube-api-read.yaml
   - deployment.yaml
@@ -14,6 +16,10 @@ resources:
   - migration-job.yaml
   - networkpolicy-default-deny.yaml
   - networkpolicy-allow-dns-egress.yaml
+  - networkpolicy-allow-egress-kubernetes-api-https.yaml
+  - networkpolicy-allow-egress-gitops-https.yaml
+  - networkpolicy-allow-egress-prometheus.yaml
+  - networkpolicy-allow-egress-loki.yaml
   - networkpolicy-allow-ingress.yaml
   - networkpolicy-allow-postgres-ingress.yaml
   - networkpolicy-allow-egress-postgres.yaml

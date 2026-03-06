@@ -274,7 +274,7 @@ Rotation cadence: every 90 days, and immediately after any credential exposure s
 
 Homelab resource profile:
 
-- Alertmanager disabled to reduce baseline memory footprint.
+- Alertmanager enabled so the portal can query live active alerts and incidents.
 - Prometheus retention: `24h` and `retentionSize: 3GiB` on `5Gi` PVC.
 - Grafana persistence enabled with `2Gi` PVC.
 - Scope: single shared cluster monitoring stack for now (no separate `monitoring-prod` app) to avoid Argo CD shared-resource conflicts.
