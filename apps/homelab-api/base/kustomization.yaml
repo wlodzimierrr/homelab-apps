@@ -6,6 +6,7 @@ resources:
   - role-backend-kube-api-read.yaml
   - rolebinding-backend-kube-api-read.yaml
   - deployment.yaml
+  - catalog-sync-cronjob.yaml
   - service.yaml
   - ingress.yaml
   - postgres-service.yaml
