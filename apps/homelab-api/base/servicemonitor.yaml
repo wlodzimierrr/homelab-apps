@@ -9,6 +9,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: homelab-api
+      app.kubernetes.io/component: api
   namespaceSelector:
     matchNames:
       - homelab-api

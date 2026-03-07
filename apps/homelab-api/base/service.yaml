@@ -5,10 +5,12 @@ metadata:
   namespace: homelab-api
   labels:
     app.kubernetes.io/name: homelab-api
+    app.kubernetes.io/component: api
 spec:
   type: ClusterIP
   selector:
     app.kubernetes.io/name: homelab-api
+    app.kubernetes.io/component: api
   ports:
     - name: http
       port: 80
