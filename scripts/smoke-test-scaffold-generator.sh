@@ -43,19 +43,10 @@ done
 grep -q "service_id: scaffold-smoke" "$gitops_root/services.yaml"
 grep -q "repo_url: 'https://github.com/example/scaffold-smoke'" "$gitops_root/services.yaml"
 
-if command -v kustomize >/dev/null 2>&1; then
-  kustomize build "$gitops_root/apps/scaffold-smoke/envs/dev" >/dev/null
-  kustomize build "$gitops_root/apps/scaffold-smoke/envs/prod" >/dev/null
-  kustomize build "$gitops_root/environments/dev" >/dev/null
-  kustomize build "$gitops_root/environments/prod" >/dev/null
-elif command -v kubectl >/dev/null 2>&1; then
-  kubectl kustomize "$gitops_root/apps/scaffold-smoke/envs/dev" >/dev/null
-  kubectl kustomize "$gitops_root/apps/scaffold-smoke/envs/prod" >/dev/null
-  kubectl kustomize "$gitops_root/environments/dev" >/dev/null
-  kubectl kustomize "$gitops_root/environments/prod" >/dev/null
-else
-  echo "warning: neither kustomize nor kubectl found; skipped render validation" >&2
-fi
+"$gitops_root/scripts/render-kustomize.sh" "$gitops_root/apps/scaffold-smoke/envs/dev" >/dev/null
+"$gitops_root/scripts/render-kustomize.sh" "$gitops_root/apps/scaffold-smoke/envs/prod" >/dev/null
+"$gitops_root/scripts/render-kustomize.sh" "$gitops_root/environments/dev" >/dev/null
+"$gitops_root/scripts/render-kustomize.sh" "$gitops_root/environments/prod" >/dev/null
 
 "$gitops_root/scripts/check-environment-contract.sh" >/dev/null
 "$gitops_root/scripts/check-rbac-guardrails.sh" >/dev/null

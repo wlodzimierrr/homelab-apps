@@ -8,6 +8,8 @@ resources:
   - middleware-oauth2.yaml
   - networkpolicy-allow-ingress-oauth2-proxy.yaml
   - networkpolicy-allow-egress-oauth2-proxy.yaml
+generators:
+  - oauth2-proxy-secret-generator.yaml
 commonLabels:
   homelab.env: dev
 patches:

@@ -19,12 +19,6 @@ for file in "${required_files[@]}"; do
   fi
 done
 
-if command -v kustomize >/dev/null 2>&1; then
-  kustomize build apps/homelab-web/envs/dev >/dev/null
-elif command -v kubectl >/dev/null 2>&1; then
-  kubectl kustomize apps/homelab-web/envs/dev >/dev/null
-else
-  echo "warning: neither kustomize nor kubectl found; skipped render validation" >&2
-fi
+"$repo_root/scripts/render-kustomize.sh" apps/homelab-web/envs/dev >/dev/null
 
 echo "sso manifest validation passed"

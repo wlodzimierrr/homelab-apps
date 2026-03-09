@@ -1176,7 +1176,7 @@ def main() -> None:
     print(f"Catalog metadata entry: {gitops_root / 'services.yaml'}")
     print("Next steps:")
     print(f"  1. Review the generated repo files in {repo_output_dir}")
-    print(f"  2. Run kustomize build {gitops_root / 'apps' / args.name / 'envs' / 'dev'}")
+    print(f"  2. Run ./scripts/render-kustomize.sh {gitops_root / 'apps' / args.name / 'envs' / 'dev'}")
     print(
         f"  3. Open a PR in the workloads repo with apps/{args.name}, bootstrap/project-homelab.yaml, services.yaml, and environments/dev/workloads/{args.name}-app.yaml"
     )

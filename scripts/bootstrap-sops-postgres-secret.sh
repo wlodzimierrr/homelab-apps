@@ -26,6 +26,7 @@ if [[ "$env_name" != "dev" && "$env_name" != "prod" ]]; then
 fi
 
 secret_path="apps/homelab-api/envs/${env_name}/postgres-secret.enc.yaml"
+generator_path="apps/homelab-api/envs/${env_name}/postgres-secret-generator.yaml"
 kustomization_path="apps/homelab-api/envs/${env_name}/kustomization.yaml"
 
 read -rp "POSTGRES_DB [homelab]: " postgres_db
@@ -59,14 +60,37 @@ cp "$tmp_plain" "$secret_path"
 sops --encrypt --in-place "$secret_path"
 rm -f "$tmp_plain"
 
-if ! grep -qE '^[[:space:]]*-[[:space:]]*postgres-secret\.enc\.yaml[[:space:]]*$' "$kustomization_path"; then
+cat > "$generator_path" <<'EOF'
+apiVersion: viaduct.ai/v1
+kind: ksops
+metadata:
+  name: postgres-secret-generator
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ksops
+files:
+  - postgres-secret.enc.yaml
+EOF
+
+if grep -qE '^[[:space:]]*-[[:space:]]*postgres-secret\.enc\.yaml[[:space:]]*$' "$kustomization_path"; then
   awk '
-    /^resources:/ && inserted == 0 { print; print "  - postgres-secret.enc.yaml"; inserted = 1; next }
+    /^[[:space:]]*-[[:space:]]*postgres-secret\.enc\.yaml[[:space:]]*$/ { next }
+    { print }
+  ' "$kustomization_path" > "${kustomization_path}.tmp"
+  mv "${kustomization_path}.tmp" "$kustomization_path"
+fi
+
+if ! grep -qE '^[[:space:]]*-[[:space:]]*postgres-secret-generator\.yaml[[:space:]]*$' "$kustomization_path"; then
+  awk '
+    /^generators:/ && inserted == 0 { print; print "  - postgres-secret-generator.yaml"; inserted = 1; next }
+    /^commonLabels:/ && inserted == 0 { print "generators:"; print "  - postgres-secret-generator.yaml"; inserted = 1 }
     { print }
   ' "$kustomization_path" > "${kustomization_path}.tmp"
   mv "${kustomization_path}.tmp" "$kustomization_path"
 fi
 
 echo "created: $secret_path"
+echo "created: $generator_path"
 echo "updated: $kustomization_path"
-echo "next: ./scripts/check-secrets-guardrails.sh"
+echo "next: ./scripts/check-secrets-guardrails.sh && ./scripts/render-kustomize.sh apps/homelab-api/envs/${env_name} >/dev/null"

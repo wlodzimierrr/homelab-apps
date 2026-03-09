@@ -5,14 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 status=0
-render_tool=""
 regex_tool=""
-
-if command -v kustomize >/dev/null 2>&1; then
-  render_tool="kustomize"
-elif command -v kubectl >/dev/null 2>&1; then
-  render_tool="kubectl"
-fi
 
 if command -v rg >/dev/null 2>&1; then
   regex_tool="rg"
@@ -68,26 +61,11 @@ require_regex() {
 
 render_overlay() {
   local overlay="$1"
-
-  case "$render_tool" in
-    kustomize)
-      if kustomize build "$overlay" >/dev/null; then
-        pass "rendered $overlay with kustomize"
-      else
-        fail "kustomize build failed for $overlay"
-      fi
-      ;;
-    kubectl)
-      if kubectl kustomize "$overlay" >/dev/null; then
-        pass "rendered $overlay with kubectl kustomize"
-      else
-        fail "kubectl kustomize failed for $overlay"
-      fi
-      ;;
-    *)
-      echo "[env-contract] WARN: neither kustomize nor kubectl is available; skipping render validation for $overlay"
-      ;;
-  esac
+  if "$repo_root/scripts/render-kustomize.sh" "$overlay" >/dev/null; then
+    pass "rendered $overlay with plugin-aware kustomize"
+  else
+    fail "plugin-aware kustomize build failed for $overlay"
+  fi
 }
 
 echo "[env-contract] checking bootstrap entrypoints..."

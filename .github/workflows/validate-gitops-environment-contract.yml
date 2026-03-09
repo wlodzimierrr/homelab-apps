@@ -36,6 +36,12 @@ jobs:
         with:
           kustomize-version: "5.4.3"
 
+      - name: Setup ksops
+        run: |
+          source <(curl -s https://raw.githubusercontent.com/viaduct-ai/kustomize-sops/master/scripts/install-ksops-archive.sh)
+          command -v ksops
+          echo "$(dirname "$(command -v ksops)")" >> "$GITHUB_PATH"
+
       - name: Run manifest guardrails
         run: |
           ./scripts/check-rbac-guardrails.sh

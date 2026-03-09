@@ -215,6 +215,7 @@ Bootstrap helper:
 ```bash
 ./scripts/bootstrap-sops-postgres-secret.sh dev
 ./scripts/bootstrap-sops-postgres-secret.sh prod
+./scripts/render-kustomize.sh apps/homelab-api/envs/dev >/dev/null
 ```
 
 ### Private GHCR image pulls
@@ -254,18 +255,21 @@ Dev overlay resources:
 - `apps/homelab-web/envs/dev/networkpolicy-allow-egress-oauth2-proxy.yaml`
 - ingress patches in `apps/homelab-web/envs/dev/patch-ingress.yaml` and `patch-ingress-api.yaml`
 
-### oauth2-proxy bootstrap (secret in Git is placeholder only)
+### oauth2-proxy bootstrap (SOPS + KSOPS)
 
-Edit placeholders in `apps/homelab-web/envs/dev/oauth2-proxy.yaml` and apply:
+Create/update the encrypted secret and render the dev overlay locally:
 
 ```bash
-kubectl apply -k apps/homelab-web/envs/dev
+./scripts/bootstrap-sops-oauth2-proxy-secret.sh dev
+./scripts/render-kustomize.sh apps/homelab-web/envs/dev >/dev/null
 ```
 
 This config protects both UI and `/api/*` with:
 
 - `oauth2-errors` middleware: converts auth `401/403` to oauth2 sign-in flow.
 - `oauth2-forward-auth` middleware: validates session and forwards user/group claims.
+
+Commit `apps/homelab-web/envs/dev/oauth2-proxy-secret.enc.yaml` and let Argo CD reconcile it through KSOPS.
 
 ### Emergency break-glass path
 
