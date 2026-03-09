@@ -7,17 +7,76 @@ cd "$repo_root"
 echo "[rbac-guardrails] scanning workloads manifests..."
 
 fail=0
-rbac_files="$(rg -l --glob 'apps/**/*.yaml' 'kind:\s*(Role|ClusterRole|RoleBinding|ClusterRoleBinding)' apps || true)"
 cluster_admin_hits_file="$(mktemp)"
 rbac_wildcard_hits_file="$(mktemp)"
 trap 'rm -f "$cluster_admin_hits_file" "$rbac_wildcard_hits_file"' EXIT
+
+if command -v rg >/dev/null 2>&1; then
+  regex_tool="rg"
+else
+  regex_tool="grep"
+fi
+
+search_list() {
+  local pattern="$1"
+  case "$regex_tool" in
+    rg)
+      rg -l --glob 'apps/**/*.yaml' "$pattern" apps || true
+      ;;
+    grep)
+      find apps -type f -name '*.yaml' -exec grep -El "$pattern" {} + || true
+      ;;
+  esac
+}
+
+search_capture() {
+  local pattern="$1"
+  local output_file="$2"
+  case "$regex_tool" in
+    rg)
+      rg -n --glob 'apps/**/*.yaml' "$pattern" apps >"$output_file"
+      ;;
+    grep)
+      find apps -type f -name '*.yaml' -exec grep -EnH "$pattern" {} + >"$output_file"
+      ;;
+  esac
+}
+
+search_quiet() {
+  local pattern="$1"
+  local file="$2"
+  case "$regex_tool" in
+    rg)
+      rg -q "$pattern" "$file"
+      ;;
+    grep)
+      grep -Eq "$pattern" "$file"
+      ;;
+  esac
+}
+
+search_file_capture() {
+  local pattern="$1"
+  local file="$2"
+  local output_file="$3"
+  case "$regex_tool" in
+    rg)
+      rg -n "$pattern" "$file" >"$output_file"
+      ;;
+    grep)
+      grep -EnH "$pattern" "$file" >"$output_file"
+      ;;
+  esac
+}
+
+rbac_files="$(search_list 'kind:\s*(Role|ClusterRole|RoleBinding|ClusterRoleBinding)')"
 
 allowed_clusterrolebinding_file="apps/homelab-api/base/clusterrolebinding-backend-kube-api-read.yaml"
 allowed_clusterrole_file="apps/homelab-api/base/clusterrole-backend-kube-api-read.yaml"
 allowed_clusterrole_name="homelab-api-backend-kube-api-read"
 
 # 1) App workloads must not define cluster-admin style bindings.
-if rg -n --glob 'apps/**/*.yaml' 'cluster-admin' apps >"$cluster_admin_hits_file"; then
+if search_capture 'cluster-admin' "$cluster_admin_hits_file"; then
   echo "[rbac-guardrails] FAIL: disallowed cluster-admin reference in apps/"
   cat "$cluster_admin_hits_file"
   fail=1
@@ -26,7 +85,7 @@ else
 fi
 
 # 2) App workloads may define only explicitly approved read-only ClusterRoleBindings.
-mapfile -t clusterrolebinding_files < <(rg -l --glob 'apps/**/*.yaml' '^kind:\s*ClusterRoleBinding$' apps || true)
+mapfile -t clusterrolebinding_files < <(search_list '^kind:\s*ClusterRoleBinding$')
 
 if [[ "${#clusterrolebinding_files[@]}" -eq 0 ]]; then
   echo "[rbac-guardrails] OK: no ClusterRoleBinding objects in apps/"
@@ -45,19 +104,19 @@ else
       echo "[rbac-guardrails] FAIL: approved ClusterRoleBinding name drifted in $file"
       fail=1
     fi
-    if ! rg -q '^[[:space:]-]*kind:[[:space:]]*ServiceAccount$' "$file"; then
+    if ! search_quiet '^[[:space:]-]*kind:[[:space:]]*ServiceAccount$' "$file"; then
       echo "[rbac-guardrails] FAIL: approved ClusterRoleBinding must bind a ServiceAccount in $file"
       fail=1
     fi
-    if ! rg -q '^[[:space:]]*name:[[:space:]]*homelab-api-backend$' "$file"; then
+    if ! search_quiet '^[[:space:]]*name:[[:space:]]*homelab-api-backend$' "$file"; then
       echo "[rbac-guardrails] FAIL: approved ClusterRoleBinding subject must remain homelab-api-backend in $file"
       fail=1
     fi
-    if ! rg -q '^[[:space:]]*namespace:[[:space:]]*homelab-api$' "$file"; then
+    if ! search_quiet '^[[:space:]]*namespace:[[:space:]]*homelab-api$' "$file"; then
       echo "[rbac-guardrails] FAIL: approved ClusterRoleBinding subject namespace must remain homelab-api in $file"
       fail=1
     fi
-    if ! rg -q '^[[:space:]]*kind:[[:space:]]*ClusterRole$' "$file"; then
+    if ! search_quiet '^[[:space:]]*kind:[[:space:]]*ClusterRole$' "$file"; then
       echo "[rbac-guardrails] FAIL: approved ClusterRoleBinding must reference a ClusterRole in $file"
       fail=1
     fi
@@ -75,8 +134,9 @@ else
   done
 
   if [[ "$unexpected_clusterrolebindings" -eq 0 ]] && [[ -f "$allowed_clusterrole_file" ]]; then
-    if rg -n '^[[:space:]]*-[[:space:]]*(create|update|patch|delete|deletecollection|bind|escalate|impersonate|approve)$' "$allowed_clusterrole_file"; then
+    if search_file_capture '^[[:space:]]*-[[:space:]]*(create|update|patch|delete|deletecollection|bind|escalate|impersonate|approve)$' "$allowed_clusterrole_file" "$rbac_wildcard_hits_file"; then
       echo "[rbac-guardrails] FAIL: approved ClusterRole must remain read-only: $allowed_clusterrole_file"
+      cat "$rbac_wildcard_hits_file"
       fail=1
     else
       echo "[rbac-guardrails] OK: approved ClusterRole verbs remain read-only"
@@ -89,7 +149,15 @@ fi
 
 # 3) Prevent wildcard RBAC rules in app roles.
 if [[ -n "${rbac_files}" ]]; then
-  if rg -n '^\s*-\s*"\*"\s*$|^\s*-\s*\*\s*$' ${rbac_files} >"$rbac_wildcard_hits_file"; then
+  if case "$regex_tool" in
+    rg)
+      rg -n '^\s*-\s*"\*"\s*$|^\s*-\s*\*\s*$' ${rbac_files} >"$rbac_wildcard_hits_file"
+      ;;
+    grep)
+      find apps -type f -name '*.yaml' -exec grep -EnH '^[[:space:]]*-[[:space:]]*"?\*"?[[:space:]]*$' {} + >"$rbac_wildcard_hits_file"
+      ;;
+  esac
+  then
     echo "[rbac-guardrails] FAIL: wildcard RBAC token found in apps RBAC manifests"
     cat "$rbac_wildcard_hits_file"
     fail=1
