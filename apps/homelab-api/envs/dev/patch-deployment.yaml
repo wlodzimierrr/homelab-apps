@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/wlodzimierrr/homelab-api:sha-d9d630b2215201108ce2762e31838665576db090
+          image: ghcr.io/wlodzimierrr/homelab-api:sha-70176d838d826eaf44260348042fcb1e6d783a07
           env:
             - name: APP_ENV
               value: dev
