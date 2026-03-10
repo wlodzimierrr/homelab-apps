@@ -4,7 +4,7 @@ metadata:
   name: homelab-web
   namespace: homelab-web
 spec:
-  replicas: 2
+  replicas: 1
   template:
     spec:
       containers:
