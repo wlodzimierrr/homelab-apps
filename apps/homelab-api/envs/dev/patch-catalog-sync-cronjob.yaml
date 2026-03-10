@@ -10,4 +10,4 @@ spec:
         spec:
           containers:
             - name: catalog-sync
-              image: ghcr.io/wlodzimierrr/homelab-api:sha-735129e6275f65d6e80d839bc6b46f6115f19244
+              image: ghcr.io/wlodzimierrr/homelab-api:sha-e9542ba79334443f3bc11ce6fe87fdecb8e5be6b
