@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: homelab-api
   namespace: homelab-api
+  annotations:
+    homelab.io/migration-strategy: forward-only-skip-db-ahead
   labels:
     app.kubernetes.io/name: homelab-api
 spec:
