@@ -489,6 +489,7 @@ def gitops_base_files(
     namespace: str,
     image_repo: str,
     template: TemplateSpec,
+    observability_mode: str,
     base_tag: str,
     description: str,
     image_pull_secret: str,
@@ -578,21 +579,25 @@ def gitops_base_files(
         ]
     )
 
-    return {
-        "kustomization.yaml": render_template(
-            """
-            apiVersion: kustomize.config.k8s.io/v1beta1
-            kind: Kustomization
-            resources:
-              - namespace.yaml
-              - serviceaccount.yaml
-              - deployment.yaml
-              - service.yaml
-              - ingress.yaml
-              - networkpolicy-default-deny.yaml
-              - networkpolicy-allow-dns-egress.yaml
-              - networkpolicy-allow-ingress.yaml
-            """,
+    resources = [
+        "namespace.yaml",
+        "serviceaccount.yaml",
+        "deployment.yaml",
+        "service.yaml",
+        "ingress.yaml",
+        "networkpolicy-default-deny.yaml",
+        "networkpolicy-allow-dns-egress.yaml",
+        "networkpolicy-allow-ingress.yaml",
+    ]
+    if observability_mode == "app-native":
+        resources.insert(4, "servicemonitor.yaml")
+
+    files = {
+        "kustomization.yaml": (
+            "apiVersion: kustomize.config.k8s.io/v1beta1\n"
+            "kind: Kustomization\n"
+            "resources:\n"
+            + "".join(f"  - {resource}\n" for resource in resources)
         ),
         "namespace.yaml": render_template(
             """
@@ -726,6 +731,34 @@ def gitops_base_files(
             container_port=str(template.container_port),
         ),
     }
+
+    if observability_mode == "app-native":
+        files["servicemonitor.yaml"] = render_template(
+            """
+            apiVersion: monitoring.coreos.com/v1
+            kind: ServiceMonitor
+            metadata:
+              name: {name}
+              namespace: {namespace}
+              labels:
+                release: kube-prometheus-stack
+            spec:
+              selector:
+                matchLabels:
+                  app.kubernetes.io/name: {name}
+              namespaceSelector:
+                matchNames:
+                  - {namespace}
+              endpoints:
+                - port: http
+                  path: /metrics
+                  interval: 30s
+            """,
+            name=name,
+            namespace=namespace,
+        )
+
+    return files
 
 
 def gitops_overlay_files(
@@ -1059,6 +1092,7 @@ def scaffold_gitops(args: argparse.Namespace, template: TemplateSpec, gitops_roo
         namespace=namespace,
         image_repo=args.image_repo,
         template=template,
+        observability_mode=args.observability_mode or template.default_observability_mode,
         base_tag=args.dev_tag,
         description=args.description,
         image_pull_secret=args.image_pull_secret,

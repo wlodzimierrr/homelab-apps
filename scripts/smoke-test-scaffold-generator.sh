@@ -28,6 +28,7 @@ required_paths=(
   "$repo_output_dir/.github/workflows/build-scaffold-smoke.yml"
   "$repo_output_dir/app/main.py"
   "$gitops_root/apps/scaffold-smoke/base/kustomization.yaml"
+  "$gitops_root/apps/scaffold-smoke/base/servicemonitor.yaml"
   "$gitops_root/apps/scaffold-smoke/envs/dev/kustomization.yaml"
   "$gitops_root/apps/scaffold-smoke/envs/prod/kustomization.yaml"
   "$gitops_root/environments/dev/workloads/scaffold-smoke-app.yaml"
@@ -45,6 +46,7 @@ done
 grep -q "service_id: scaffold-smoke" "$gitops_root/services.yaml"
 grep -q "repo_url: 'https://github.com/example/scaffold-smoke'" "$gitops_root/services.yaml"
 grep -q "mode: app-native" "$gitops_root/services.yaml"
+grep -q "path: /metrics" "$gitops_root/apps/scaffold-smoke/base/servicemonitor.yaml"
 
 CI=true HOME="$smoke_home" "$gitops_root/scripts/render-kustomize.sh" "$gitops_root/apps/scaffold-smoke/envs/dev" >/dev/null
 CI=true HOME="$smoke_home" "$gitops_root/scripts/render-kustomize.sh" "$gitops_root/apps/scaffold-smoke/envs/prod" >/dev/null
@@ -52,6 +54,7 @@ CI=true HOME="$smoke_home" "$gitops_root/scripts/render-kustomize.sh" "$gitops_r
 CI=true HOME="$smoke_home" "$gitops_root/scripts/render-kustomize.sh" "$gitops_root/environments/prod" >/dev/null
 
 CI=true HOME="$smoke_home" "$gitops_root/scripts/check-environment-contract.sh" >/dev/null
+"$gitops_root/scripts/check-service-identity-contract.sh" >/dev/null
 "$gitops_root/scripts/check-rbac-guardrails.sh" >/dev/null
 "$gitops_root/scripts/check-secrets-guardrails.sh" >/dev/null
 

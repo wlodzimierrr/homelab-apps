@@ -59,6 +59,20 @@ require_regex() {
   esac
 }
 
+require_any_file() {
+  local description="$1"
+  shift
+
+  for file in "$@"; do
+    if [[ -f "$file" ]]; then
+      pass "$description"
+      return
+    fi
+  done
+
+  fail "$description (none of: $*)"
+}
+
 echo "[identity-contract] checking canonical service identity across GitOps and workload manifests..."
 
 extract_service_block() {
@@ -80,6 +94,7 @@ extract_service_block() {
 while IFS= read -r app_dir; do
   service_id="$(basename "$app_dir")"
   service_block="$(extract_service_block "$service_id")"
+  service_mode="$(printf '%s\n' "$service_block" | sed -nE 's/^[[:space:]]*mode:[[:space:]]*(app-native|ingress-derived|no-http)$/\1/p' | head -n1)"
 
   require_regex "services.yaml" "^[[:space:]]*- service_id:[[:space:]]*${service_id}$" "service catalog entry exists for ${service_id}"
   require_regex "services.yaml" "argo_app:[[:space:]]*${service_id}-dev$" "service catalog dev Argo app matches ${service_id}"
@@ -123,6 +138,43 @@ while IFS= read -r app_dir; do
     require_regex "$service_monitor" "matchNames:" "ServiceMonitor uses namespace selector for ${service_id}"
     require_regex "$service_monitor" "-[[:space:]]*${service_id}$" "ServiceMonitor scopes to ${service_id} namespace"
   fi
+
+  case "$service_mode" in
+    app-native)
+      require_file "$base_service" "app-native service exposes a Service for ${service_id}"
+      require_file "$service_monitor" "app-native service exposes a ServiceMonitor for ${service_id}"
+      if [[ -f "$service_monitor" ]]; then
+        require_regex "$service_monitor" "path:[[:space:]]*/metrics$" "app-native ServiceMonitor uses /metrics for ${service_id}"
+      fi
+      ;;
+    ingress-derived)
+      require_any_file \
+        "ingress-derived service declares at least one ingress for ${service_id}" \
+        "${app_dir}/base/ingress.yaml" \
+        "${app_dir}/base/ingress-api.yaml" \
+        "${app_dir}/base/ingress-public.yaml" \
+        "${app_dir}/base/ingress-internal.yaml"
+
+      ingress_found=0
+      for ingress_file in \
+        "${app_dir}/base/ingress.yaml" \
+        "${app_dir}/base/ingress-api.yaml" \
+        "${app_dir}/base/ingress-public.yaml" \
+        "${app_dir}/base/ingress-internal.yaml"; do
+        if [[ -f "$ingress_file" ]]; then
+          ingress_found=1
+          require_regex "$ingress_file" "app.kubernetes.io/name:[[:space:]]*${service_id}$" "ingress labels use canonical app label for ${service_id} (${ingress_file##*/})"
+          require_regex "$ingress_file" "^[[:space:]]*ingressClassName:[[:space:]]*traefik$" "ingress declares traefik class for ${service_id} (${ingress_file##*/})"
+        fi
+      done
+      if [[ "$ingress_found" -eq 0 ]]; then
+        fail "ingress-derived service declares at least one ingress for ${service_id}"
+      fi
+      ;;
+    no-http)
+      pass "no-http service mode declared for ${service_id}"
+      ;;
+  esac
 done < <(find apps -mindepth 1 -maxdepth 1 -type d | sort)
 
 if [[ "$status" -ne 0 ]]; then
