@@ -59,4 +59,88 @@ CI=true HOME="$smoke_home" "$gitops_root/scripts/check-environment-contract.sh" 
 "$gitops_root/scripts/check-secrets-guardrails.sh" >/dev/null
 python3 "$gitops_root/scripts/validate-services-catalog.py" --catalog "$gitops_root/services.yaml" >/dev/null
 
+# Test database addon feature with PostgreSQL
+echo "Testing database addon (PostgreSQL)..."
+repo_output_dir_pg="$tmp_root/scaffold-smoke-pg"
+gitops_root_pg="$tmp_root/workloads-pg"
+cp -R "$repo_root" "$gitops_root_pg"
+rm -rf "$gitops_root_pg/.git"
+
+python3 "$repo_root/scripts/scaffold-service.py" \
+  --name scaffold-smoke-pg \
+  --description "Smoke-test scaffolded FastAPI service with PostgreSQL" \
+  --image-repo ghcr.io/example/scaffold-smoke-pg \
+  --repo-url https://github.com/example/scaffold-smoke-pg \
+  --owner-email ops@example.com \
+  --template python-fastapi \
+  --add-on database \
+  --db-engine postgres \
+  --gitops-root "$gitops_root_pg" \
+  --repo-output-dir "$repo_output_dir_pg" \
+  --image-pull-secret ""
+
+pg_required_paths=(
+  "$repo_output_dir_pg/.github/workflows/build-scaffold-smoke-pg.yml"
+  "$gitops_root_pg/apps/scaffold-smoke-pg/base/kustomization.yaml"
+  "$gitops_root_pg/apps/scaffold-smoke-pg/base/scaffold-smoke-pg-postgres-statefulset.yaml"
+  "$gitops_root_pg/apps/scaffold-smoke-pg/base/scaffold-smoke-pg-postgres-service.yaml"
+  "$gitops_root_pg/apps/scaffold-smoke-pg/base/networkpolicy-allow-postgres-egress.yaml"
+  "$gitops_root_pg/apps/scaffold-smoke-pg/base/networkpolicy-allow-postgres-ingress.yaml"
+  "$gitops_root_pg/apps/scaffold-smoke-pg/base/scaffold-smoke-pg-migrate-job.yaml"
+)
+
+for path in "${pg_required_paths[@]}"; do
+  if [[ ! -f "$path" ]]; then
+    echo "missing database addon file: $path" >&2
+    exit 1
+  fi
+done
+
+# Verify kustomization.yaml includes database resources
+grep -q "scaffold-smoke-pg-postgres-statefulset.yaml" "$gitops_root_pg/apps/scaffold-smoke-pg/base/kustomization.yaml" || {
+  echo "kustomization.yaml missing postgres-statefulset reference" >&2
+  exit 1
+}
+
+# Verify kustomize can render the PostgreSQL variant
+CI=true HOME="$smoke_home" "$gitops_root_pg/scripts/render-kustomize.sh" "$gitops_root_pg/apps/scaffold-smoke-pg/base" >/dev/null
+
+# Test database addon feature with MySQL
+echo "Testing database addon (MySQL)..."
+repo_output_dir_mysql="$tmp_root/scaffold-smoke-mysql"
+gitops_root_mysql="$tmp_root/workloads-mysql"
+cp -R "$repo_root" "$gitops_root_mysql"
+rm -rf "$gitops_root_mysql/.git"
+
+python3 "$repo_root/scripts/scaffold-service.py" \
+  --name scaffold-smoke-mysql \
+  --description "Smoke-test scaffolded FastAPI service with MySQL" \
+  --image-repo ghcr.io/example/scaffold-smoke-mysql \
+  --repo-url https://github.com/example/scaffold-smoke-mysql \
+  --owner-email ops@example.com \
+  --template python-fastapi \
+  --add-on database \
+  --db-engine mysql \
+  --gitops-root "$gitops_root_mysql" \
+  --repo-output-dir "$repo_output_dir_mysql" \
+  --image-pull-secret ""
+
+mysql_required_paths=(
+  "$gitops_root_mysql/apps/scaffold-smoke-mysql/base/kustomization.yaml"
+  "$gitops_root_mysql/apps/scaffold-smoke-mysql/base/scaffold-smoke-mysql-mysql-statefulset.yaml"
+  "$gitops_root_mysql/apps/scaffold-smoke-mysql/base/scaffold-smoke-mysql-mysql-service.yaml"
+  "$gitops_root_mysql/apps/scaffold-smoke-mysql/base/networkpolicy-allow-mysql-egress.yaml"
+  "$gitops_root_mysql/apps/scaffold-smoke-mysql/base/networkpolicy-allow-mysql-ingress.yaml"
+)
+
+for path in "${mysql_required_paths[@]}"; do
+  if [[ ! -f "$path" ]]; then
+    echo "missing database addon file: $path" >&2
+    exit 1
+  fi
+done
+
+# Verify kustomize can render the MySQL variant
+CI=true HOME="$smoke_home" "$gitops_root_mysql/scripts/render-kustomize.sh" "$gitops_root_mysql/apps/scaffold-smoke-mysql/base" >/dev/null
+
 echo "scaffold generator smoke test passed"
