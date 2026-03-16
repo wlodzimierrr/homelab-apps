@@ -204,6 +204,14 @@ def validate_catalog(catalog_path: Path) -> None:
             else:
                 _fail(f"{env_label} 'argo_app' must be a non-empty string")
 
+            # public_host (optional) — must be a non-empty string if present
+            public_host = env_entry.get("public_host")
+            if public_host is not None:
+                if isinstance(public_host, str) and public_host.strip():
+                    _pass(f"{env_label} public_host is present and non-empty")
+                else:
+                    _fail(f"{env_label} 'public_host' must be a non-empty string if present")
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(

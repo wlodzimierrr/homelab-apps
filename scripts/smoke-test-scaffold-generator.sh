@@ -20,6 +20,7 @@ python3 "$repo_root/scripts/scaffold-service.py" \
   --repo-url https://github.com/example/scaffold-smoke \
   --owner-email ops@example.com \
   --template python-fastapi \
+  --prod-host scaffold-smoke.example.com \
   --gitops-root "$gitops_root" \
   --repo-output-dir "$repo_output_dir" \
   --image-pull-secret ""
@@ -46,6 +47,7 @@ done
 grep -q "service_id: scaffold-smoke" "$gitops_root/services.yaml"
 grep -q "repo_url: 'https://github.com/example/scaffold-smoke'" "$gitops_root/services.yaml"
 grep -q "mode: app-native" "$gitops_root/services.yaml"
+grep -q "public_host: 'scaffold-smoke.example.com'" "$gitops_root/services.yaml"
 grep -q "path: /metrics" "$gitops_root/apps/scaffold-smoke/base/servicemonitor.yaml"
 
 CI=true HOME="$smoke_home" "$gitops_root/scripts/render-kustomize.sh" "$gitops_root/apps/scaffold-smoke/envs/dev" >/dev/null

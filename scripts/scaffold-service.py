@@ -467,6 +467,7 @@ def append_service_catalog_entry(
     description: str,
     namespace: str,
     observability_mode: str,
+    public_host: str = "",
 ) -> None:
     if catalog_path.exists():
         existing = catalog_path.read_text(encoding="utf-8")
@@ -478,6 +479,7 @@ def append_service_catalog_entry(
     if "services:" not in existing:
         raise SystemExit(f"expected top-level services: list in {catalog_path}")
 
+    prod_public_host_line = f"        public_host: {yaml_string(public_host)}\n" if public_host else ""
     entry = (
         f"  - service_id: {service_id}\n"
         f"    name: {yaml_string(display_name)}\n"
@@ -495,6 +497,7 @@ def append_service_catalog_entry(
         "      - name: prod\n"
         f"        namespace: {namespace}\n"
         f"        argo_app: {service_id}-prod\n"
+        f"{prod_public_host_line}"
     )
     suffix = "" if existing.endswith("\n") else "\n"
     catalog_path.write_text(existing + suffix + entry, encoding="utf-8")
@@ -1682,6 +1685,7 @@ def scaffold_gitops(args: argparse.Namespace, template: TemplateSpec, gitops_roo
         description=args.description,
         namespace=namespace,
         observability_mode=args.observability_mode or template.default_observability_mode,
+        public_host=prod_host,
     )
 
 
