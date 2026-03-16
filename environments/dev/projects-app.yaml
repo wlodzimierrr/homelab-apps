@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homelab-projects
+  namespace: argocd
+spec:
+  project: homelab-bootstrap
+  source:
+    repoURL: https://github.com/wlodzimierrr/homelab-workloads.git
+    targetRevision: main
+    path: bootstrap
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
