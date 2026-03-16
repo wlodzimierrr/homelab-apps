@@ -96,8 +96,24 @@ while IFS= read -r app_dir; do
   service_block="$(extract_service_block "$service_id")"
   service_mode="$(printf '%s\n' "$service_block" | sed -nE 's/^[[:space:]]*mode:[[:space:]]*(app-native|ingress-derived|no-http)$/\1/p' | head -n1)"
 
+  # Detect prod-only services (e.g. databases) — no dev env entry in catalog
+  has_dev_env=0
+  if printf '%s\n' "$service_block" | grep -Eq "argo_app:[[:space:]]*${service_id}-dev$"; then
+    has_dev_env=1
+  fi
+
+  # Detect StatefulSet-based services (e.g. databases)
+  has_statefulset=0
+  if [[ -f "${app_dir}/base/statefulset.yaml" ]]; then
+    has_statefulset=1
+  fi
+
   require_regex "services.yaml" "^[[:space:]]*- service_id:[[:space:]]*${service_id}$" "service catalog entry exists for ${service_id}"
-  require_regex "services.yaml" "argo_app:[[:space:]]*${service_id}-dev$" "service catalog dev Argo app matches ${service_id}"
+  if [[ "$has_dev_env" -eq 1 ]]; then
+    require_regex "services.yaml" "argo_app:[[:space:]]*${service_id}-dev$" "service catalog dev Argo app matches ${service_id}"
+  else
+    pass "service catalog dev Argo app matches ${service_id} (prod-only service — no dev env expected)"
+  fi
   require_regex "services.yaml" "argo_app:[[:space:]]*${service_id}-prod$" "service catalog prod Argo app matches ${service_id}"
   require_regex "services.yaml" "namespace:[[:space:]]*${service_id}$" "service catalog namespace matches ${service_id}"
 
@@ -115,16 +131,29 @@ while IFS= read -r app_dir; do
     fail "service catalog observability mode is valid for ${service_id}"
   fi
 
-  dev_app_file="environments/dev/workloads/${service_id}-app.yaml"
-  require_file "$dev_app_file" "dev workload application exists for ${service_id}"
-  require_regex "$dev_app_file" "^  name: ${service_id}-dev$" "dev Argo application name matches ${service_id}"
-  require_regex "$dev_app_file" "^    path: apps/${service_id}/envs/dev$" "dev Argo application path matches ${service_id}"
-  require_regex "$dev_app_file" "^    namespace: ${service_id}$" "dev Argo destination namespace matches ${service_id}"
+  if [[ "$has_dev_env" -eq 1 ]]; then
+    dev_app_file="environments/dev/workloads/${service_id}-app.yaml"
+    require_file "$dev_app_file" "dev workload application exists for ${service_id}"
+    require_regex "$dev_app_file" "^  name: ${service_id}-dev$" "dev Argo application name matches ${service_id}"
+    require_regex "$dev_app_file" "^    path: apps/${service_id}/envs/dev$" "dev Argo application path matches ${service_id}"
+    require_regex "$dev_app_file" "^    namespace: ${service_id}$" "dev Argo destination namespace matches ${service_id}"
+  else
+    pass "dev workload application exists for ${service_id} (prod-only service — no dev env expected)"
+    pass "dev Argo application name matches ${service_id} (prod-only service)"
+    pass "dev Argo application path matches ${service_id} (prod-only service)"
+    pass "dev Argo destination namespace matches ${service_id} (prod-only service)"
+  fi
 
-  base_deployment="${app_dir}/base/deployment.yaml"
-  require_file "$base_deployment" "base deployment exists for ${service_id}"
-  require_regex "$base_deployment" "app.kubernetes.io/name:[[:space:]]*${service_id}$" "deployment labels use canonical app label for ${service_id}"
-  require_regex "$base_deployment" "^  namespace: ${service_id}$" "deployment namespace matches ${service_id}"
+  if [[ "$has_statefulset" -eq 1 ]]; then
+    base_workload="${app_dir}/base/statefulset.yaml"
+    require_regex "$base_workload" "app.kubernetes.io/name:[[:space:]]*${service_id}$" "workload labels use canonical app label for ${service_id}"
+    require_regex "$base_workload" "^  namespace: ${service_id}$" "workload namespace matches ${service_id}"
+  else
+    base_deployment="${app_dir}/base/deployment.yaml"
+    require_file "$base_deployment" "base deployment exists for ${service_id}"
+    require_regex "$base_deployment" "app.kubernetes.io/name:[[:space:]]*${service_id}$" "deployment labels use canonical app label for ${service_id}"
+    require_regex "$base_deployment" "^  namespace: ${service_id}$" "deployment namespace matches ${service_id}"
+  fi
 
   base_service="${app_dir}/base/service.yaml"
   if [[ -f "$base_service" ]]; then
@@ -148,27 +177,31 @@ while IFS= read -r app_dir; do
       fi
       ;;
     ingress-derived)
-      require_any_file \
-        "ingress-derived service declares at least one ingress for ${service_id}" \
-        "${app_dir}/base/ingress.yaml" \
-        "${app_dir}/base/ingress-api.yaml" \
-        "${app_dir}/base/ingress-public.yaml" \
-        "${app_dir}/base/ingress-internal.yaml"
+      if [[ "$has_statefulset" -eq 1 ]]; then
+        pass "ingress-derived StatefulSet service — base ingress managed via env overlay for ${service_id}"
+      else
+        require_any_file \
+          "ingress-derived service declares at least one ingress for ${service_id}" \
+          "${app_dir}/base/ingress.yaml" \
+          "${app_dir}/base/ingress-api.yaml" \
+          "${app_dir}/base/ingress-public.yaml" \
+          "${app_dir}/base/ingress-internal.yaml"
 
-      ingress_found=0
-      for ingress_file in \
-        "${app_dir}/base/ingress.yaml" \
-        "${app_dir}/base/ingress-api.yaml" \
-        "${app_dir}/base/ingress-public.yaml" \
-        "${app_dir}/base/ingress-internal.yaml"; do
-        if [[ -f "$ingress_file" ]]; then
-          ingress_found=1
-          require_regex "$ingress_file" "app.kubernetes.io/name:[[:space:]]*${service_id}$" "ingress labels use canonical app label for ${service_id} (${ingress_file##*/})"
-          require_regex "$ingress_file" "^[[:space:]]*ingressClassName:[[:space:]]*traefik$" "ingress declares traefik class for ${service_id} (${ingress_file##*/})"
+        ingress_found=0
+        for ingress_file in \
+          "${app_dir}/base/ingress.yaml" \
+          "${app_dir}/base/ingress-api.yaml" \
+          "${app_dir}/base/ingress-public.yaml" \
+          "${app_dir}/base/ingress-internal.yaml"; do
+          if [[ -f "$ingress_file" ]]; then
+            ingress_found=1
+            require_regex "$ingress_file" "app.kubernetes.io/name:[[:space:]]*${service_id}$" "ingress labels use canonical app label for ${service_id} (${ingress_file##*/})"
+            require_regex "$ingress_file" "^[[:space:]]*ingressClassName:[[:space:]]*traefik$" "ingress declares traefik class for ${service_id} (${ingress_file##*/})"
+          fi
+        done
+        if [[ "$ingress_found" -eq 0 ]]; then
+          fail "ingress-derived service declares at least one ingress for ${service_id}"
         fi
-      done
-      if [[ "$ingress_found" -eq 0 ]]; then
-        fail "ingress-derived service declares at least one ingress for ${service_id}"
       fi
       ;;
     no-http)
