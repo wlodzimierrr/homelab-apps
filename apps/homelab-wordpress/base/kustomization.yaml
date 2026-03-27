@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - serviceaccount.yaml
-  - wordpress-db-secret.enc.yaml
   - persistentvolumeclaim.yaml
   - deployment.yaml
   - service.yaml
