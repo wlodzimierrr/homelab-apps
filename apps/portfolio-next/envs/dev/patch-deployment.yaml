@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/wlodzimierrr/portfolio-next:sha-eeeebf75b5b19893f3ff319e1581be529279b768
+          image: ghcr.io/wlodzimierrr/portfolio-next:sha-6bdfe43b6e6132c03c34fa70dc10f2cb96704a3c
           imagePullPolicy: Always
           env:
             - name: APP_ENV
