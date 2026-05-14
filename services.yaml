@@ -92,3 +92,4 @@ services:
         namespace: portfolio-next
         argo_app: portfolio-next-prod
         public_host: portfolio-next.homelab.local
+        public_host: 'wlodzimierrr.pl'
