@@ -5,7 +5,7 @@ metadata:
   namespace: portfolio-next
 spec:
   rules:
-    - host: portfolio-next.homelab.local
+    - host: wlodzimierrr.pl
       http:
         paths:
           - path: /
