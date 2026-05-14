@@ -3,7 +3,15 @@ kind: Ingress
 metadata:
   name: portfolio-next
   namespace: portfolio-next
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-http01
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
+  tls:
+    - hosts:
+        - wlodzimierrr.pl
+      secretName: portfolio-next-tls
   rules:
     - host: wlodzimierrr.pl
       http:
