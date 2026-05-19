@@ -10,3 +10,4 @@ resources:
   - networkpolicy-allow-dns-egress.yaml
   - networkpolicy-allow-ingress.yaml
   - networkpolicy-allow-acme-http01-solver.yaml
+  - networkpolicy-allow-database-egress.yaml
