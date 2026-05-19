@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ufc-dashboard
+  namespace: ufc-dashboard
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-http01
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+    - hosts:
+        - ufc.wlodzimierrr.pl
+      secretName: ufc-dashboard-tls
+  rules:
+    - host: ufc.wlodzimierrr.pl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ufc-dashboard
+                port:
+                  number: 80
