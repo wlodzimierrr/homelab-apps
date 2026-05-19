@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ufc-dashboard
+  namespace: ufc-dashboard
+spec:
+  rules:
+    - host: ufc-dashboard.homelab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ufc-dashboard
+                port:
+                  number: 80
