@@ -93,3 +93,20 @@ services:
         argo_app: portfolio-next-prod
         public_host: portfolio-next.homelab.local
         public_host: 'wlodzimierrr.pl'
+  - service_id: ufc-dashboard
+    name: 'Ufc Dashboard'
+    owner: 'wlodzimierrr'
+    owner_email: 'wlodzimierrr@gmail.com'
+    repo_url: 'https://github.com/wlodzimierrr/ufc-dashboard'
+    runbook_url: 'https://github.com/wlodzimierrr/ufc-dashboard'
+    description: 'ufc data dashboard'
+    observability:
+      mode: ingress-derived
+    envs:
+      - name: dev
+        namespace: ufc-dashboard
+        argo_app: ufc-dashboard-dev
+      - name: prod
+        namespace: ufc-dashboard
+        argo_app: ufc-dashboard-prod
+        public_host: 'ufc.wlodzimierrr.pl'

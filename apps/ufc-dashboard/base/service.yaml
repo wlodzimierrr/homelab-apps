@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ufc-dashboard
+  namespace: ufc-dashboard
+  labels:
+    app.kubernetes.io/name: ufc-dashboard
+    app.kubernetes.io/instance: ufc-dashboard
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ufc-dashboard
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

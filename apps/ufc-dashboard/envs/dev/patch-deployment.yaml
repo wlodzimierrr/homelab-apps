@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ufc-dashboard
+  namespace: ufc-dashboard
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/wlodzimierrr/ufc-dashboard:latest
+          imagePullPolicy: Always
+          env:
+            - name: APP_ENV
+              value: dev
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi

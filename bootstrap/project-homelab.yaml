@@ -131,3 +131,19 @@ spec:
   clusterResourceWhitelist:
   - group: ''
     kind: Namespace
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ufc-dashboard
+  namespace: argocd
+spec:
+  description: ufc data dashboard resources in ufc-dashboard namespace only
+  sourceRepos:
+    - https://github.com/wlodzimierrr/homelab-workloads.git
+  destinations:
+    - namespace: ufc-dashboard
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace

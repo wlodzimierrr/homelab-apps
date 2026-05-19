@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ufc-dashboard-dev
+  namespace: argocd
+spec:
+  project: ufc-dashboard
+  source:
+    repoURL: https://github.com/wlodzimierrr/homelab-workloads.git
+    targetRevision: main
+    path: apps/ufc-dashboard/envs/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ufc-dashboard
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
