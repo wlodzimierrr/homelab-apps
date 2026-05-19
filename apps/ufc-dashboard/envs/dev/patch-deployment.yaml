@@ -14,6 +14,11 @@ spec:
           env:
             - name: APP_ENV
               value: dev
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ufc-dashboard-database
+                  key: DATABASE_URL
           resources:
             requests:
               cpu: 50m
