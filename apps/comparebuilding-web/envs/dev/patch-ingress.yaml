@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: comparebuilding-web
+  namespace: comparebuilding-web
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-http01
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+    - hosts:
+        - comparebuilding.wlodzimierrr.pl
+      secretName: comparebuilding-web-tls
+  rules:
+    - host: comparebuilding.wlodzimierrr.pl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: comparebuilding-web
+                port:
+                  number: 80
