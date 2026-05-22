@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: comparebuilding-web
+  namespace: comparebuilding-web
+spec:
+  rules:
+    - host: comparebuilding-web.homelab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: comparebuilding-web
+                port:
+                  number: 80

@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: comparebuilding-web
+  namespace: comparebuilding-web
+  labels:
+    app.kubernetes.io/name: comparebuilding-web
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: comparebuilding-web.dev.homelab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: comparebuilding-web
+                port:
+                  number: 80

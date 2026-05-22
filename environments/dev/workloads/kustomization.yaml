@@ -1,6 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - comparebuilding-web-app.yaml
   - homelab-api-app.yaml
   - homelab-web-app.yaml
   - homelab-wordpress-app.yaml
