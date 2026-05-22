@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: comparebuilding-web-dev
+  namespace: argocd
+spec:
+  project: comparebuilding-web
+  source:
+    repoURL: https://github.com/wlodzimierrr/homelab-workloads.git
+    targetRevision: main
+    path: apps/comparebuilding-web/envs/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: comparebuilding-web
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

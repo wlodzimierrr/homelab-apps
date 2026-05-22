@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: comparebuilding-web
+  namespace: comparebuilding-web
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/wlodzimierrr/compare_frontend:latest
+          imagePullPolicy: Always
+          env:
+            - name: APP_ENV
+              value: prod
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

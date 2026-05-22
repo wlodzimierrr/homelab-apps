@@ -110,3 +110,20 @@ services:
         namespace: ufc-dashboard
         argo_app: ufc-dashboard-prod
         public_host: 'ufc.wlodzimierrr.pl'
+  - service_id: comparebuilding-web
+    name: 'Comparebuilding Web'
+    owner: 'wlodzimierrr'
+    owner_email: 'wlodzimierrr@gmail.com'
+    repo_url: 'https://github.com/wlodzimierrr/CompareBuildingProducts_Web'
+    runbook_url: 'https://github.com/wlodzimierrr/CompareBuildingProducts_Web'
+    description: 'compare building products webpage'
+    observability:
+      mode: ingress-derived
+    envs:
+      - name: dev
+        namespace: comparebuilding-web
+        argo_app: comparebuilding-web-dev
+      - name: prod
+        namespace: comparebuilding-web
+        argo_app: comparebuilding-web-prod
+        public_host: 'comparebuilding.wlodzimierrr.pl'
