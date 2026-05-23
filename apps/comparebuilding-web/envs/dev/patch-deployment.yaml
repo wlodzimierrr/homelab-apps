@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: ghcr.io/wlodzimierrr/compare_frontend:latest
+          image: ghcr.io/wlodzimierrr/compare_frontend:sha-cb1e51634fee85e049a349b80abd0b7e3ad2a05d
           imagePullPolicy: Always
           env:
             - name: APP_ENV
