@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/wlodzimierrr:latest
+          image: ghcr.io/wlodzimierrr/mozi:sha-b10f550b73562559311b89e74d9d6d5f5c355ca1
           imagePullPolicy: Always
           env:
             - name: APP_ENV
