@@ -30,6 +30,7 @@ required_paths=(
   "$repo_output_dir/app/main.py"
   "$gitops_root/apps/scaffold-gen-test/base/kustomization.yaml"
   "$gitops_root/apps/scaffold-gen-test/envs/dev/kustomization.yaml"
+  "$gitops_root/apps/scaffold-gen-test/envs/dev/patch-ingress.yaml"
   "$gitops_root/apps/scaffold-gen-test/envs/prod/kustomization.yaml"
   "$gitops_root/environments/dev/workloads/scaffold-gen-test-app.yaml"
   "$gitops_root/environments/prod/workloads/scaffold-gen-test-app.yaml"
@@ -55,6 +56,10 @@ grep -q "image: ghcr.io/example/scaffold-gen-test:latest" "$gitops_root/apps/sca
 grep -q "imagePullPolicy: Always" "$gitops_root/apps/scaffold-gen-test/base/deployment.yaml"
 grep -q "image: ghcr.io/example/scaffold-gen-test:latest" "$gitops_root/apps/scaffold-gen-test/envs/dev/patch-deployment.yaml"
 grep -q "imagePullPolicy: Always" "$gitops_root/apps/scaffold-gen-test/envs/dev/patch-deployment.yaml"
+grep -q "patch-ingress.yaml" "$gitops_root/apps/scaffold-gen-test/envs/dev/kustomization.yaml"
+grep -q "host: scaffold-gen-test.example.com" "$gitops_root/apps/scaffold-gen-test/envs/dev/patch-ingress.yaml"
+grep -q "secretName: scaffold-gen-test-tls" "$gitops_root/apps/scaffold-gen-test/envs/dev/patch-ingress.yaml"
+grep -q "traefik.ingress.kubernetes.io/router.entrypoints: websecure" "$gitops_root/apps/scaffold-gen-test/envs/dev/patch-ingress.yaml"
 grep -q "ghcr.io/example/scaffold-gen-test:latest" "$repo_output_dir/.github/workflows/build-scaffold-gen-test.yml"
 grep -q "ghcr.io/example/scaffold-gen-test:sha-\${{ github.sha }}" "$repo_output_dir/.github/workflows/build-scaffold-gen-test.yml"
 grep -q "peter-evans/create-pull-request@v7" "$repo_output_dir/.github/workflows/build-scaffold-gen-test.yml"
@@ -319,6 +324,7 @@ wordpress_required_paths=(
   "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/base/networkpolicy-allow-mysql-egress.yaml"
   "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/base/networkpolicy-allow-mysql-ingress.yaml"
   "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/envs/dev/kustomization.yaml"
+  "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/envs/dev/patch-ingress.yaml"
   "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/envs/dev/wordpress-db-secret-generator.yaml"
   "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/envs/dev/wordpress-db-secret.enc.yaml"
   "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/envs/prod/kustomization.yaml"
@@ -336,10 +342,13 @@ for path in "${wordpress_required_paths[@]}"; do
 done
 
 wordpress_gitops_file_count="$(find "$gitops_root_wordpress/apps/scaffold-smoke-wordpress" -type f | wc -l | tr -d ' ')"
-if [[ "$wordpress_gitops_file_count" != "23" ]]; then
+if [[ "$wordpress_gitops_file_count" != "24" ]]; then
   echo "unexpected wordpress manifest file count: $wordpress_gitops_file_count" >&2
   exit 1
 fi
+grep -q "patch-ingress.yaml" "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/envs/dev/kustomization.yaml"
+grep -q "host: scaffold-smoke-wordpress.example.com" "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/envs/dev/patch-ingress.yaml"
+grep -q "secretName: scaffold-smoke-wordpress-tls" "$gitops_root_wordpress/apps/scaffold-smoke-wordpress/envs/dev/patch-ingress.yaml"
 
 if [[ -d "$repo_output_dir_wordpress" ]] && find "$repo_output_dir_wordpress" -type f | grep -q .; then
   echo "wordpress template should not generate an application repo scaffold" >&2

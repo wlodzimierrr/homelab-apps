@@ -49,6 +49,67 @@ def yaml_string(value: str) -> str:
 WordpressSecretEncrypter = Callable[[str, str], str]
 
 
+def public_ingress_patch(*, name: str, namespace: str, host: str, service_port: int | None = None) -> str:
+    if service_port is not None:
+        return render_template(
+            """
+            apiVersion: networking.k8s.io/v1
+            kind: Ingress
+            metadata:
+              name: {name}
+              namespace: {namespace}
+              annotations:
+                cert-manager.io/cluster-issuer: letsencrypt-http01
+                traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                traefik.ingress.kubernetes.io/router.tls: "true"
+            spec:
+              tls:
+                - hosts:
+                    - {host}
+                  secretName: {name}-tls
+              rules:
+                - host: {host}
+                  http:
+                    paths:
+                      - path: /
+                        pathType: Prefix
+                        backend:
+                          service:
+                            name: {name}
+                            port:
+                              number: {service_port}
+            """,
+            name=name,
+            namespace=namespace,
+            host=host,
+            service_port=str(service_port),
+        )
+
+    return render_template(
+        """
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: {name}
+          namespace: {namespace}
+          annotations:
+            cert-manager.io/cluster-issuer: letsencrypt-http01
+            traefik.ingress.kubernetes.io/router.entrypoints: websecure
+            traefik.ingress.kubernetes.io/router.tls: "true"
+        spec:
+          tls:
+            - hosts:
+                - {host}
+              secretName: {name}-tls
+          rules:
+            - host: {host}
+        """,
+        name=name,
+        namespace=namespace,
+        host=host,
+    )
+
+
 def generate_wordpress_secret_value(suffix: str) -> str:
     token = secrets.token_urlsafe(24).replace("-", "a").replace("_", "b")
     return f"wp-{suffix}-{token}"
@@ -1796,6 +1857,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--namespace", default="", help="Kubernetes namespace; defaults to the service name")
     parser.add_argument("--dev-host", default="", help="Dev ingress host; defaults to <name>.dev.homelab.local")
     parser.add_argument("--prod-host", default="", help="Prod ingress host; defaults to <name>.homelab.local")
+    parser.add_argument("--public-host", default="", help="Public ingress host exposed by the dev overlay; defaults to --prod-host when provided")
     parser.add_argument("--dev-tag", default="latest", help="Initial dev image tag")
     parser.add_argument("--prod-tag", default="latest", help="Initial prod image tag")
     parser.add_argument("--image-pull-secret", default="ghcr-pull-secret", help="Image pull secret; use '' for public images")
@@ -3169,6 +3231,7 @@ def wordpress_overlay_files(
     cpu_limit: str,
     memory_limit: str,
     prod_host: str,
+    public_host: str = "",
     wordpress_secret_encrypter: WordpressSecretEncrypter | None = None,
 ) -> dict[str, str]:
     db_secret_name = f"{name}-wordpress-db"
@@ -3282,7 +3345,28 @@ def wordpress_overlay_files(
         ),
     }
 
-    if env_name == "prod":
+    if env_name == "dev" and public_host:
+        files["kustomization.yaml"] = render_template(
+            """
+            apiVersion: kustomize.config.k8s.io/v1beta1
+            kind: Kustomization
+            resources:
+              - ../../base
+            generators:
+              - wordpress-db-secret-generator.yaml
+            commonLabels:
+              homelab.env: dev
+            patches:
+              - path: patch-deployment.yaml
+              - path: patch-ingress.yaml
+            """
+        )
+        files["patch-ingress.yaml"] = public_ingress_patch(
+            name=name,
+            namespace=namespace,
+            host=public_host,
+        )
+    elif env_name == "prod":
         files["kustomization.yaml"] = render_template(
             """
             apiVersion: kustomize.config.k8s.io/v1beta1
@@ -3331,6 +3415,8 @@ def gitops_overlay_files(
     cpu_limit: str,
     memory_limit: str,
     prod_host: str,
+    public_host: str = "",
+    service_port: int | None = None,
 ) -> dict[str, str]:
     image_pull_policy = "Always" if image_tag == "latest" else "IfNotPresent"
     files = {
@@ -3388,7 +3474,27 @@ def gitops_overlay_files(
         ),
     }
 
-    if env_name == "prod":
+    if env_name == "dev" and public_host:
+        files["kustomization.yaml"] = render_template(
+            """
+            apiVersion: kustomize.config.k8s.io/v1beta1
+            kind: Kustomization
+            resources:
+              - ../../base
+            commonLabels:
+              homelab.env: dev
+            patches:
+              - path: patch-deployment.yaml
+              - path: patch-ingress.yaml
+            """
+        )
+        files["patch-ingress.yaml"] = public_ingress_patch(
+            name=name,
+            namespace=namespace,
+            host=public_host,
+            service_port=service_port,
+        )
+    elif env_name == "prod":
         files["kustomization.yaml"] = render_template(
             """
             apiVersion: kustomize.config.k8s.io/v1beta1
@@ -3899,7 +4005,15 @@ def scaffold_repo(args: argparse.Namespace, template: TemplateSpec, repo_output_
         write_file(repo_output_dir / relative_path, content)
 
 
-def scaffold_gitops(args: argparse.Namespace, template: TemplateSpec, gitops_root: Path, namespace: str, dev_host: str, prod_host: str) -> None:
+def scaffold_gitops(
+    args: argparse.Namespace,
+    template: TemplateSpec,
+    gitops_root: Path,
+    namespace: str,
+    dev_host: str,
+    prod_host: str,
+    public_host: str,
+) -> None:
     app_root = gitops_root / "apps" / args.name
     ensure_absent(app_root, "service manifest directory")
 
@@ -3928,6 +4042,7 @@ def scaffold_gitops(args: argparse.Namespace, template: TemplateSpec, gitops_roo
             cpu_limit="300m",
             memory_limit="256Mi",
             prod_host=prod_host,
+            public_host=public_host,
             wordpress_secret_encrypter=wordpress_secret_encrypter,
         )
         prod_overlay = wordpress_overlay_files(
@@ -3940,6 +4055,7 @@ def scaffold_gitops(args: argparse.Namespace, template: TemplateSpec, gitops_roo
             cpu_limit="500m",
             memory_limit="512Mi",
             prod_host=prod_host,
+            public_host=public_host,
             wordpress_secret_encrypter=wordpress_secret_encrypter,
         )
     else:
@@ -3998,6 +4114,8 @@ def scaffold_gitops(args: argparse.Namespace, template: TemplateSpec, gitops_roo
             cpu_limit="300m",
             memory_limit="256Mi",
             prod_host=prod_host,
+            public_host=public_host,
+            service_port=template.service_port,
         )
         prod_overlay = gitops_overlay_files(
             name=args.name,
@@ -4012,6 +4130,8 @@ def scaffold_gitops(args: argparse.Namespace, template: TemplateSpec, gitops_roo
             cpu_limit="500m",
             memory_limit="512Mi",
             prod_host=prod_host,
+            public_host=public_host,
+            service_port=template.service_port,
         )
 
     for relative_path, content in base_files.items():
@@ -4073,7 +4193,7 @@ def scaffold_gitops(args: argparse.Namespace, template: TemplateSpec, gitops_roo
         description=args.description,
         namespace=namespace,
         observability_mode=args.observability_mode or template.default_observability_mode,
-        public_host=prod_host,
+        public_host=public_host,
     )
 
 
@@ -4099,6 +4219,7 @@ def main() -> None:
     namespace = args.namespace or args.name
     dev_host = args.dev_host or f"{args.name}.dev.homelab.local"
     prod_host = args.prod_host or f"{args.name}.homelab.local"
+    public_host = args.public_host or (args.prod_host if args.prod_host else "")
     gitops_root = Path(args.gitops_root).resolve()
     repo_output_dir = Path(args.repo_output_dir).resolve() if args.repo_output_dir else Path(f"/tmp/{args.name}-repo")
 
@@ -4106,7 +4227,7 @@ def main() -> None:
     if template.key != "wordpress":
         ensure_repo_output_dir(repo_output_dir, args.force)
         scaffold_repo(args, template, repo_output_dir)
-    scaffold_gitops(args, template, gitops_root, namespace, dev_host, prod_host)
+    scaffold_gitops(args, template, gitops_root, namespace, dev_host, prod_host, public_host)
 
     if template.key != "wordpress":
         print(f"Generated service repo: {repo_output_dir}")
