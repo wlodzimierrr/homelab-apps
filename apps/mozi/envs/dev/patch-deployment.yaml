@@ -5,6 +5,10 @@ metadata:
   namespace: mozi
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mozi
+      homelab.env: dev
   template:
     spec:
       containers:
