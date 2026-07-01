@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mozi
+  namespace: mozi
+spec:
+  rules:
+    - host: mozi.homelab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mozi
+                port:
+                  number: 80

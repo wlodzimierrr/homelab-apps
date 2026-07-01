@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mozi
+  namespace: mozi
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/wlodzimierrr:latest
+          imagePullPolicy: Always
+          env:
+            - name: APP_ENV
+              value: dev
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi

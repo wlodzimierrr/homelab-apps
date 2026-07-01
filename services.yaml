@@ -127,3 +127,20 @@ services:
         namespace: comparebuilding-web
         argo_app: comparebuilding-web-prod
         public_host: 'comparebuilding.wlodzimierrr.pl'
+  - service_id: mozi
+    name: 'Mozi'
+    owner: 'wlodzimierrr'
+    owner_email: 'wlodzimierrr@gmail.com'
+    repo_url: 'https://github.com/wlodzimierrr/mozi'
+    runbook_url: 'https://github.com/wlodzimierrr/mozi'
+    description: 'mozi meme'
+    observability:
+      mode: ingress-derived
+    envs:
+      - name: dev
+        namespace: mozi
+        argo_app: mozi-dev
+      - name: prod
+        namespace: mozi
+        argo_app: mozi-prod
+        public_host: 'mozi.wlodzimierrr.pl'
