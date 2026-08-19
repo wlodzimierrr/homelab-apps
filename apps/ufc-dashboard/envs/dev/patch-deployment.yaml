@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: ghcr.io/wlodzimierrr/ufc-dashboard:sha-b36c6a50123a0bb69525e58347e00982dfd91009
+          image: ghcr.io/wlodzimierrr/ufc-dashboard:sha-706dd594173623a155f99438b7a0bdb2f253a2cb
           imagePullPolicy: Always
           env:
             - name: APP_ENV
