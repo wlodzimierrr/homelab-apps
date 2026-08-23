@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plan-10wk
+  namespace: plan-10wk
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/wlodzimierrr/10wk_plan:latest
+          imagePullPolicy: Always
+          env:
+            - name: APP_ENV
+              value: prod
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

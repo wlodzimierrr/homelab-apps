@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: plan-10wk-dev
+  namespace: argocd
+spec:
+  project: plan-10wk
+  source:
+    repoURL: https://github.com/wlodzimierrr/homelab-workloads.git
+    targetRevision: main
+    path: apps/plan-10wk/envs/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: plan-10wk
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

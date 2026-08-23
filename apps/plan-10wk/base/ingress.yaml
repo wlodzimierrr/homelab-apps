@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: plan-10wk
+  namespace: plan-10wk
+  labels:
+    app.kubernetes.io/name: plan-10wk
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: plan-10wk.dev.homelab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: plan-10wk
+                port:
+                  number: 80
