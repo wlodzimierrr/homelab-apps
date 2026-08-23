@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: plan-10wk
+  namespace: plan-10wk
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-http01
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+    - hosts:
+        - 10wk.wlodzimierrr.pl
+      secretName: plan-10wk-tls
+  rules:
+    - host: 10wk.wlodzimierrr.pl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: plan-10wk
+                port:
+                  number: 80
