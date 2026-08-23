@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plan-10wk
+  namespace: plan-10wk
+  labels:
+    app.kubernetes.io/name: plan-10wk
+    app.kubernetes.io/instance: plan-10wk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: plan-10wk
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: plan-10wk
+    spec:
+      serviceAccountName: plan-10wk
+      containers:
+        - name: web
+          image: ghcr.io/wlodzimierrr/10wk_plan:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: APP_ENV
+              value: base
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi

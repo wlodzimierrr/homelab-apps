@@ -179,3 +179,19 @@ spec:
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: plan-10wk
+  namespace: argocd
+spec:
+  description: 10 week weightlifting program app resources in plan-10wk namespace only
+  sourceRepos:
+    - https://github.com/wlodzimierrr/homelab-workloads.git
+  destinations:
+    - namespace: plan-10wk
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace

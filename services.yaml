@@ -144,3 +144,20 @@ services:
         namespace: mozi
         argo_app: mozi-prod
         public_host: 'mozi.wlodzimierrr.pl'
+  - service_id: plan-10wk
+    name: 'Plan 10wk'
+    owner: 'wlodzimierrr'
+    owner_email: 'wlodzimierrr@gmail.com'
+    repo_url: 'https://github.com/wlodzimierrr/10wk_plan'
+    runbook_url: 'https://github.com/wlodzimierrr/10wk_plan'
+    description: '10 week weightlifting program app'
+    observability:
+      mode: ingress-derived
+    envs:
+      - name: dev
+        namespace: plan-10wk
+        argo_app: plan-10wk-dev
+      - name: prod
+        namespace: plan-10wk
+        argo_app: plan-10wk-prod
+        public_host: '10wk.wlodzimierrr.pl'

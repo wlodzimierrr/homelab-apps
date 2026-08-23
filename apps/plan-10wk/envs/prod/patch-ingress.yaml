@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: plan-10wk
+  namespace: plan-10wk
+spec:
+  rules:
+    - host: plan-10wk.homelab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: plan-10wk
+                port:
+                  number: 80
